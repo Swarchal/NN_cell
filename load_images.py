@@ -59,6 +59,24 @@ class ImageLoader(object):
         self.url_list = wanted
 
 
+    def exclude_wells(self, wells_to_exclude):
+        """
+        Given a list of wells, these channels will be removed from
+        self.url_list
+
+        Parameters:
+        ------------
+            wells_to_exlude : list of strings
+        """
+        wanted = []
+        for url in self.url_list:
+            final_path = parse_paths.get_filename(url)
+            well = parse_paths.get_well(final_path)
+            if well not in wells_to_exclude:
+                wanted.append(url)
+        self.url_list = wanted
+
+
     @staticmethod
     def _load_image(img):
         """load single image into numpy array"""
