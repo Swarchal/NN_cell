@@ -20,7 +20,6 @@ class ImageLoader(object):
 
     def __init__(self, url_list, **kwargs):
         self.url_list = _prune(url_list, **kwargs)
-        self.img_list = None
         self.grouped_channels = None
         self.img_array = None
 
@@ -29,7 +28,7 @@ class ImageLoader(object):
         """
         given a list of img urls, this will group them into the same well and
         site
-        # TODO make sure the channels are in the right order
+        TODO make sure the channels are in the right order
         """
         grouped_list = []
         urls = [parse_paths.get_filename(i) for i in self.url_list]
@@ -42,16 +41,22 @@ class ImageLoader(object):
         self.grouped_channels = grouped_list
 
 
-    def exclude_channels(self, channels_to_exclude, from_url_list=False):
+    def exclude_channels(self, channels_to_exclude):
         """
         Given a list of integers, these channels will be removed from
-        self.grouped_channels.
+        self.url_list
 
-        If from_url_list is True, then these channels will be removed from
-        self.url_list as well and will be lost.
+        Parameters:
+        ------------
+            channels_to_exclude : list of ints
         """
-        # TODO
-        pass
+        wanted = []
+        for url in self.url_list:
+            final_path = parse_paths.get_filename(url)
+            channel = parse_paths.get_channel(final_path)
+            if channel not in channels_to_exclude:
+                wanted.append(url)
+        self.url_list = wanted
 
 
     @staticmethod
