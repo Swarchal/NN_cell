@@ -77,6 +77,34 @@ class ImageLoader(object):
         self.url_list = wanted
 
 
+    def select_channels(self, channels_to_keep):
+        """
+        All channels will be removed from url_list apart from those in
+        channels_to_include
+        """
+        wanted = []
+        for url in self.url_list:
+            final_path = parse_paths.get_filename(url)
+            channel = parse_paths.get_channel(final_path)
+            if channel in channels_to_keep:
+                wanted.append(url)
+        self.url_list = wanted
+
+
+    def select_wells(self, wells_to_keep):
+        """
+        All wells will be removed from url_list apart from those in
+        wells_to_keep
+        """
+        wanted = []
+        for url in self.url_list:
+            final_path = parse_paths.get_filename(url)
+            well = parse_paths.get_well(final_path)
+            if well in wells_to_keep:
+                wanted.append(url)
+        self.url_list = wanted
+
+
     @staticmethod
     def _load_image(img):
         """load single image into numpy array"""
