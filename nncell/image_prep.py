@@ -167,6 +167,29 @@ class ImageDict(object):
         return [training, test]
 
 
+    @staticmethod
+    def get_wells(img_list, well):
+        """
+        given a list of image paths, this will return the images matching
+        the well or wells given in well
+        """
+        # parse wells from metadata
+        wells = [parse.img_well(path) for path in img_list]
+        combined = zip(img_list, wells)
+        if isinstance(list, well):
+            wanted_images = []
+            for i in well:
+                for path, parsed_well in combined:
+                    if i == parsed_well:
+                        wanted_images.append(path)
+        elif isinstance(str, well):
+            wanted_images = []
+            for path, parsed_well in combined:
+                if well == parsed_well:
+                    wanted_images.append(path)
+        return wanted_images
+
+
     def group_image_channels(self, order=True):
         """group each image list into RGB channels"""
         if self.grouped is True:
