@@ -95,14 +95,13 @@ class ImagePrep(object):
         self._make_dir(base_dir)
         # create training and test directories
         for group in self.img_dict.keys():
-            for key, img_list in self.img_dict[item].items():
+            for key, img_list in self.img_dict[group].items():
                 # create directory item/key from key
                 new_dir_path = os.path.join(os.path.abspath(base_dir), group, key)
-                self.make_dir(new_dir_path)
+                self._make_dir(new_dir_path)
                 # create and save images in new_dir_path
                 for i, img in enumerate(img_list, 1):
-                    self.write_img_to_disk(img=img,
-                                           name="img".format(i),
+                    self.write_img_to_disk(img=img, name="img_{}".format(i),
                                            path=new_dir_path)
 
 
