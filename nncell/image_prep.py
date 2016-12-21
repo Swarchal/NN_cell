@@ -206,6 +206,8 @@ class ImageDict(object):
         split into train and test sets
         these are stored in separate dictionary keys
         """
+        if self.grouped is False:
+            raise AttributeError("image channels not grouped")
         # create train and test sub-dictionaries
         self.train_test_dict["test"] = dict()
         self.train_test_dict["train"] = dict()
