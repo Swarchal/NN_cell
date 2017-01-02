@@ -48,7 +48,20 @@ class ImagePrep(object):
 
     @staticmethod
     def write_img_to_disk(img, name, path, extension=".png"):
-        """write image to disk"""
+        """
+        write image to disk
+
+        Arguments:
+        ----------
+        img : numpy array
+            numpy array  created by ImageDict.convert_to_rgb()
+        name : (string)
+            what the image file should be called
+        path : (string)
+            path to save location
+        extension : (string, default=".png")
+            file extension for image, can either be saved as .png or .jpg
+        """
         full_path = os.path.join(path, name + extension)
         io.imsave(fname=full_path, arr=img)
 
@@ -97,12 +110,12 @@ class ImagePrep(object):
         for group in self.img_dict.keys():
             for key, img_list in self.img_dict[group].items():
                 # create directory item/key from key
-                new_dir_path = os.path.join(os.path.abspath(base_dir), group, key)
-                self._make_dir(new_dir_path)
-                # create and save images in new_dir_path
+                dir_path = os.path.join(os.path.abspath(base_dir), group, key)
+                self._make_dir(dir_path)
+                # create and save images in dir_path
                 for i, img in enumerate(img_list, 1):
                     self.write_img_to_disk(img=img, name="img_{}".format(i),
-                                           path=new_dir_path)
+                                           path=dir_path)
 
 
 class ImageDict(object):
@@ -127,7 +140,10 @@ class ImageDict(object):
         """
         given a list of img urls, this will group them into the same well and
         site, per plate
-        order : sorts channel numbers into numerical order
+        Arguments:
+        -----------
+        order : boolean
+            sort channel numbers into numerical order
         """
         grouped_list = []
         urls = [parse.img_filename(i) for i in url_list]
@@ -157,7 +173,16 @@ class ImageDict(object):
 
     @staticmethod
     def _split_train_test(list_like, test_size):
-        """randomly split list object into training and test set"""
+        """
+        randomly split list object into training and test set
+
+        Arguments:
+        -----------
+        list_like : list-like
+            list to split into training and test sets
+        test_size : float
+            proportion of the data to become the test set
+        """
         test_n = round(test_size * len(list_like))
         train_n = len(list_like) - test_n
         random.shuffle(list_like)
@@ -172,6 +197,13 @@ class ImageDict(object):
         """
         given a list of image paths, this will return the images matching
         the well or wells given in well
+
+        Arguments:
+        -----------
+        img_list : list
+            list of image URLs
+        well : string or list of strings
+            which well(s) to select
         """
         # parse wells from metadata
         wells = [parse.img_well(path) for path in img_list]
@@ -222,7 +254,16 @@ class ImageDict(object):
 
 
     def add_class(self, class_name, url_list):
-        """add a new class of images to the url_list"""
+        """
+        add a new class of images to the url_list
+
+        Arguments:
+        ----------
+        class_name : string
+            name of the class to be stored in the dictionary
+        url_list : list of strings
+            image paths that belong to `class_name`
+        """
         if self.grouped is True:
             raise Warning("channels already grouped, this will need to be " +
                           "called again to group the new class")
