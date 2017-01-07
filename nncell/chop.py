@@ -1,5 +1,7 @@
+import os
 import numpy as np
 from skimage import feature
+from skimage import io
 
 """
 chop parent image into separate images for each nuclei
@@ -148,6 +150,42 @@ def chop_nuclei(img, size=100, edge="keep", threshold=0.1, **kwargs):
     # remove any empty arrays
     cropped_remove_na = [i for i in cropped_imgs if i is not None]
     return np.stack(cropped_remove_na)
+
+
+def save_chopped(arr, directory, prefix="img", ext=".png"):
+    """
+    Save chopped array from chop_nuclei() to a directory. Each image will be
+    saved individually and consecutively numbered.
+
+    Parameters:
+    -----------
+    arr : np.ndarray
+        numpy array from chop_nuclei()
+    directory : string
+        directory in which to save the images.
+    prefix : string (default : "img")
+        image prefix
+    ext : string (default : ".png")
+        file extension. options are .png and .jpg
+    """
+    assert isinstance(arr, np.ndarray)
+    # check if ext is valid
+    ext_args = [".png", ".jpg"]
+    if ext not in ext_args:
+        raise ValueError("unknown ext argument. options : {}".format(ext_args))
+    # make sure directory exists - create it if necessary
+    try:
+        os.makedirs(directory)
+    except OSError:
+        if os.path.isdir(directory):
+            pass
+        else:
+            err_msg = "failed to create directory {}".format(directory)
+            raise RuntimeError(err_msg)
+    for i, img in enumerate(arr):
+        img_name = "{}_{}{}".format(prefix, i, ext)
+        full_path = os.path.join(os.path.abspath(directory), img_name)
+        io.imsave(fname=full_path, arr=img)
 
 
 def _check_size(size):
