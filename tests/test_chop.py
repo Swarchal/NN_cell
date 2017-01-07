@@ -107,6 +107,16 @@ def test_crop_to_box_error_size():
 
 
 def test_chop_nuclei():
-    arr = chop.chop_nuclei(img=IMG_NUCLEI, size=100, edge="keep", threshold=0.1)
-    print(arr)
+    size = 100
+    arr = chop.chop_nuclei(img=IMG_NUCLEI, size=size, edge="keep", threshold=0.1)
     assert isinstance(arr, np.ndarray)
+    # this is dependent on the image and parameters
+    assert len(arr) == 288
+    for i in arr:
+        assert i.shape == (size, size)
+
+
+def test_chop_nuclei_edge_remove():
+    keep = chop.chop_nuclei(img=IMG_NUCLEI, size=300, edge="keep")
+    remove = chop.chop_nuclei(img=IMG_NUCLEI, size=300, edge="remove")
+    assert len(keep) > len(remove)
