@@ -109,9 +109,7 @@ def crop_to_box(x, y, img, size, edge="keep"):
         if edge == "remove":
             # don't use this x,y co-ordinate
             return None
-    else:
-        # not near the edge, just crop and return array
-        return img[x - dist: x + dist, y - dist: y + dist]
+    return img[x - dist: x + dist, y - dist: y + dist]
 
 
 def chop_nuclei(img, size=100, edge="keep", threshold=0.1, **kwargs):
