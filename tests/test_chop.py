@@ -7,7 +7,9 @@ from skimage import io
 # load test image
 TEST_PATH = os.path.join(os.path.abspath("tests/test_images"))
 IMG_NUCLEI_PATH = os.path.abspath(os.path.join(TEST_PATH, "val screen_B02_s1_w1AD0ABEBC-3BA8-4199-9431-041A4D5B8C32.tif"))
+IMG_MULTI_PATH = os.path.abspath(os.path.join(TEST_PATH, "multi_array.npy"))
 IMG_NUCLEI = io.imread(IMG_NUCLEI_PATH)
+IMG_MULTI = np.load(IMG_MULTI_PATH)
 
 def test_is_outside_img_finds_inside0():
     # example 10 by 10 sub-array in the middle of a 100 by 100 parent array
@@ -106,7 +108,7 @@ def test_crop_to_box_error_size():
         chop.crop_to_box(500, 500, arr, size=15)
 
 
-def test_chop_nuclei():
+def test_chop_nuclei_single_channel():
     size = 100
     arr = chop.chop_nuclei(img=IMG_NUCLEI, size=size, edge="keep", threshold=0.1)
     assert isinstance(arr, np.ndarray)
@@ -120,3 +122,34 @@ def test_chop_nuclei_edge_remove():
     keep = chop.chop_nuclei(img=IMG_NUCLEI, size=300, edge="keep")
     remove = chop.chop_nuclei(img=IMG_NUCLEI, size=300, edge="remove")
     assert len(keep) > len(remove)
+
+
+def test_chop_nuclei_multi_channel_same_number():
+    multi_keep = chop.chop_nuclei(img=IMG_MULTI, size=300, edge="keep")
+    single_keep = chop.chop_nuclei(img=IMG_NUCLEI, size=300, edge="keep")
+    multi_remove = chop.chop_nuclei(img=IMG_MULTI, size=300, edge="remove")
+    single_remove = chop.chop_nuclei(img=IMG_NUCLEI, size=300, edge="remove")
+    assert len(multi_keep) == len(single_keep)
+    assert len(multi_remove) == len(single_remove)
+
+
+def test_chop_nuclei_multi_keeps_dims():
+    multi = chop.chop_nuclei(img=IMG_MULTI, size=300, edge="keep")
+    for img in multi:
+        assert img.ndim == 3
+        assert img.shape == (300, 300, 3)
+
+
+def test_save_chopped_existing_dir():
+    # TODO
+    pass
+
+
+def test_saved_chopped_new_dir():
+    # TODO
+    pass
+
+
+def test_saved_chopped_error_wrong_ext():
+    # TODO
+    pass
