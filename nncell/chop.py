@@ -99,7 +99,7 @@ def crop_to_box(x, y, img, size, edge="keep"):
     """
     _check_size(size)
     _check_edge_args(edge)
-    for dim in img.shape:
+    for dim in img.shape[:2]:
         if dim < size:
             raise ValueError("image is too small for specified box size")
     dist = size / 2
@@ -111,7 +111,10 @@ def crop_to_box(x, y, img, size, edge="keep"):
         if edge == "remove":
             # don't use this x,y co-ordinate
             return None
-    return img[x - dist: x + dist, y - dist: y + dist]
+    if img.ndim == 1:
+        return img[x - dist: x + dist, y - dist: y + dist]
+    if img.ndim > 1:
+        return img[x - dist: x + dist, y - dist: y + dist, :]
 
 
 def chop_nuclei(img, size=100, edge="keep", threshold=0.1, **kwargs):
@@ -139,8 +142,13 @@ def chop_nuclei(img, size=100, edge="keep", threshold=0.1, **kwargs):
         nuclei.
     """
     _check_edge_args(edge)
-    # find nuclei positions within the image
-    nuclei = feature.blob_dog(img, threshold=threshold, **kwargs)
+    if img.ndim == 1:
+        # single channel image
+        # find nuclei positions within the image
+        nuclei = feature.blob_dog(img, threshold=threshold, **kwargs)
+    if img.ndim > 1:
+        # multi channel image, take first channel as nuclei
+        nuclei = feature.blob_dog(img[:,:,0], threshold=threshold, **kwargs)
     # loop through x-y co-ordinates for each nucleus
     # create list of sub-arrays
     cropped_imgs = []
@@ -169,10 +177,7 @@ def save_chopped(arr, directory, prefix="img", ext=".png"):
         file extension. options are .png and .jpg
     """
     assert isinstance(arr, np.ndarray)
-    # check if ext is valid
-    ext_args = [".png", ".jpg"]
-    if ext not in ext_args:
-        raise ValueError("unknown ext argument. options : {}".format(ext_args))
+    _check_ext_args(ext)
     # make sure directory exists - create it if necessary
     try:
         os.makedirs(directory)
@@ -182,7 +187,8 @@ def save_chopped(arr, directory, prefix="img", ext=".png"):
         else:
             err_msg = "failed to create directory {}".format(directory)
             raise RuntimeError(err_msg)
-    for i, img in enumerate(arr):
+    # loop through images in array and save with consecutive numbers
+    for i, img in enumerate(arr, 1):
         img_name = "{}_{}{}".format(prefix, i, ext)
         full_path = os.path.join(os.path.abspath(directory), img_name)
         io.imsave(fname=full_path, arr=img)
@@ -199,6 +205,14 @@ def _check_size(size):
 
 
 def _check_edge_args(edge):
+    """check edge arguments"""
     edge_args = ["keep", "remove"]
     if edge not in edge_args:
         raise ValueError("unknown edge argument. options: {}".format(edge_args))
+
+
+def _check_ext_args(ext):
+    """check ext arguments"""
+    ext_args = [".png", ".jpg"]
+    if ext not in ext_args:
+        raise ValueError("unknown ext argument. options : {}".format(ext_args))
