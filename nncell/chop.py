@@ -111,10 +111,12 @@ def crop_to_box(x, y, img, size, edge="keep"):
         if edge == "remove":
             # don't use this x,y co-ordinate
             return None
-    if img.ndim == 1:
+    if img.ndim == 2:
         return img[x - dist: x + dist, y - dist: y + dist]
-    if img.ndim > 1:
+    elif img.ndim == 3:
         return img[x - dist: x + dist, y - dist: y + dist, :]
+    else:
+        raise ValueError("wrong number of dimensions in img")
 
 
 def chop_nuclei(img, size=100, edge="keep", threshold=0.1, **kwargs):
@@ -142,13 +144,15 @@ def chop_nuclei(img, size=100, edge="keep", threshold=0.1, **kwargs):
         nuclei.
     """
     _check_edge_args(edge)
-    if img.ndim == 1:
+    if img.ndim == 2:
         # single channel image
         # find nuclei positions within the image
         nuclei = feature.blob_dog(img, threshold=threshold, **kwargs)
-    if img.ndim > 1:
+    elif img.ndim == 3:
         # multi channel image, take first channel as nuclei
         nuclei = feature.blob_dog(img[:,:,0], threshold=threshold, **kwargs)
+    else:
+        raise ValueError("wrong number of dimensions in img")
     # loop through x-y co-ordinates for each nucleus
     # create list of sub-arrays
     cropped_imgs = []
