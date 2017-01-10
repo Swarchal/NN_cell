@@ -11,6 +11,7 @@ import pandas as pd
 from parserix import parse
 import skimage
 from skimage import io
+from nncell import utils
 
 class ImagePrep(object):
     """
@@ -82,19 +83,6 @@ class ImagePrep(object):
             raise ValueError("train and test sets contain differing classes")
 
 
-    @staticmethod
-    def _make_dir(directory):
-        """sensible to way to make directory if it doesn't exist"""
-        try:
-            os.makedirs(directory)
-        except OSError:
-            if os.path.isdir(directory):
-                pass
-            else:
-                err_msg = "failed to create directory {}".format(directory)
-                raise RuntimeError(err_msg)
-
-
     def create_directories(self, base_dir):
         """
         create directory structure for prepared images
@@ -105,13 +93,13 @@ class ImagePrep(object):
             Path to directory in which to hold training and test datasets
             A directory will be created if it does not already exist
         """
-        self._make_dir(base_dir)
+        utils.make_dir(base_dir)
         # create training and test directories
         for group in self.img_dict.keys():
             for key, img_list in self.img_dict[group].items():
                 # create directory item/key from key
                 dir_path = os.path.join(os.path.abspath(base_dir), group, key)
-                self._make_dir(dir_path)
+                utils.make_dir(dir_path)
                 # create and save images in dir_path
                 for i, img in enumerate(img_list, 1):
                     self.write_img_to_disk(img=img, name="img_{}".format(i),
@@ -183,8 +171,8 @@ class ImageDict(object):
         test_size : float
             proportion of the data to become the test set
         """
-        test_n = round(test_size * len(list_like))
-        train_n = len(list_like) - test_n
+        test_n = int(round(test_size * len(list_like)))
+        train_n = int(len(list_like) - test_n)
         random.shuffle(list_like)
         training = list_like[:train_n]
         test = list_like[-test_n:]
@@ -198,7 +186,7 @@ class ImageDict(object):
         given a list of image paths, this will return the images matching
         the well or wells given in well
 
-        Arguments:
+        Parameters:
         -----------
         img_list : list
             list of image URLs
@@ -220,6 +208,66 @@ class ImageDict(object):
                 if well == parsed_well:
                     wanted_images.append(path)
         return wanted_images
+
+
+    @staticmethod
+    def remove_channels(img_list, channels):
+        """
+        given a list of image paths, this will remove specified channel
+        numbers.
+
+        Parameters:
+        -----------
+        img_list : list
+            list of image URLs
+        channels : list of integers
+            list of channel numbers to exclude
+
+        Returns:
+        --------
+        list of image URLs
+        """
+        # find if img_urls are full paths or just filenames
+        if utils.is_full_path(img_list[0]):
+            just_file_path = [parse.img_filename(i) for i in img_list]
+        else:
+            just_file_path = img_list
+        channel_nums = [parse.img_channel(i) for i in just_file_path]
+        # make sure we zip the original img_list, *not* just_file_path
+        ch_img_tup = zip(channel_nums, img_list)
+        filtered_tup = [i for i in ch_img_tup if i[0] not in channels]
+        _, img_urls = zip(*filtered_tup)
+        return img_urls
+
+
+    @staticmethod
+    def keep_channels(img_list, channels):
+        """
+        given a list of image paths, this will keep specified channel numbers,
+        and remove all others.
+
+        Parameters:
+        -----------
+        img_list : list
+            list of image URLs
+        channels : list of integers
+            list of channel numbers to keep
+
+        Returns:
+        --------
+        list of image URLs
+        """
+        # find if img_urls are full paths or just filenames
+        if utils.is_full_path(img_list[0]):
+            just_file_path = [parse.img_filename(i) for i in img_list]
+        else:
+            just_file_path = img_list
+        channel_nums = [parse.img_channel(i) for i in just_file_path]
+        # make sure we zip the original img_list, *not* just_file_path
+        ch_img_tup = zip(channel_nums, img_list)
+        filtered_tup = [i for i in ch_img_tup if i[0] in channels]
+        _, img_urls = zip(*filtered_tup)
+        return img_urls
 
 
     def group_image_channels(self, order=True):
@@ -268,8 +316,8 @@ class ImageDict(object):
             raise Warning("channels already grouped, this will need to be " +
                           "called again to group the new class")
         if self.train_test_sets is True:
-            raise AttributeError("cannot add new class once training and test" +
-                                 " sets have been sampled")
+            msg = "cannot add new class once training and test sets have been sampled"
+            raise AttributeError(msg)
         self.parent_dict[class_name] = url_list
 
 
