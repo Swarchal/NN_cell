@@ -150,7 +150,7 @@ def chop_nuclei(img, size=100, edge="keep", threshold=0.1, **kwargs):
         nuclei = feature.blob_dog(img, threshold=threshold, **kwargs)
     elif img.ndim == 3:
         # multi channel image, take first channel as nuclei
-        nuclei = feature.blob_dog(img[:,:,0], threshold=threshold, **kwargs)
+        nuclei = feature.blob_dog(img[:, :, 0], threshold=threshold, **kwargs)
     else:
         raise ValueError("wrong number of dimensions in img")
     # loop through x-y co-ordinates for each nucleus
@@ -182,15 +182,7 @@ def save_chopped(arr, directory, prefix="img", ext=".png"):
     """
     assert isinstance(arr, np.ndarray)
     _check_ext_args(ext)
-    # make sure directory exists - create it if necessary
-    try:
-        os.makedirs(directory)
-    except OSError:
-        if os.path.isdir(directory):
-            pass
-        else:
-            err_msg = "failed to create directory {}".format(directory)
-            raise RuntimeError(err_msg)
+    utils.make_dir(directory)
     # loop through images in array and save with consecutive numbers
     for i, img in enumerate(arr, 1):
         img_name = "{}_{}{}".format(prefix, i, ext)
