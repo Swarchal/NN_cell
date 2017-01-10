@@ -67,7 +67,7 @@ def test_ImageDict_add_class():
     ImgDict.add_class("test", IMG_URLS)
     out = ImgDict.parent_dict
     assert isinstance(out, dict)
-    assert out.keys() == ["test"]
+    assert list(out.keys()) == ["test"]
 
 
 def test_ImageDict_group_channels():
