@@ -33,7 +33,7 @@ class ImagePrep(object):
     """
 
     def __init__(self, img_dict):
-        if isinstance(dict, img_dict):
+        if isinstance(img_dict, dict):
             self.img_dict = img_dict
         else:
             raise ValueError("input needs to be a dictionary")
