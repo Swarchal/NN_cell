@@ -5,35 +5,13 @@ import os
 from nncell import image_prep
 from parserix import parse
 from parserix import clean
+import numpy as np
 import pytest
 
 # sort out data for tests
 TEST_DIR = os.path.abspath("tests")
 PATH_TO_IMG_URLS = os.path.join(TEST_DIR, "test_images/images.txt")
 IMG_URLS = clean.clean([i.strip() for i in open(PATH_TO_IMG_URLS).readlines()])
-
-####################################
-# ImagePrep tests
-####################################
-
-def test_ImagePrep_convert_to_rgb():
-    pass
-
-
-def test_ImagePrep_write_img_to_disk():
-    pass
-
-
-def test_ImageDict_sort_channels():
-    pass
-
-
-def test_ImagePrep_create_directories():
-    pass
-
-
-def test_ImagePrep_prepare_images():
-    pass
 
 
 #####################################
@@ -100,3 +78,60 @@ def test_ImageDict_train_test_split():
     n_test = len(out["test"]["test"])
     n_images = len(ImgDict._group_channels(IMG_URLS, order=False))
     assert n_train + n_test == n_images
+
+
+def test_ImageDict_sort_channels():
+    ImgDict = image_prep.ImageDict()
+    # un-sorted channels
+    # reverse channels as already sorted
+    rev_img_urls = IMG_URLS[::-1]
+    ImgDict.add_class("foo", rev_img_urls)
+    ImgDict.group_image_channels(order=False)
+    order_false_dict = ImgDict.parent_dict
+    order_false_vals = order_false_dict["foo"][0]
+    order_false_chnnls = [parse.img_channel(val) for val in order_false_vals]
+    assert sorted(order_false_chnnls) != order_false_chnnls
+    # sort channels
+    # need to create new ImageDict class otherwise we get a warning due to
+    # adding a new class to already grouped data
+    ImgDict2 = image_prep.ImageDict()
+    ImgDict2.add_class("bar", IMG_URLS)
+    ImgDict2.group_image_channels(order=True)
+    order_true_dict = ImgDict2.parent_dict
+    order_true_vals = order_true_dict["bar"][0]
+    order_true_chnnls = [parse.img_channel(val) for val in order_true_vals]
+    assert sorted(order_true_chnnls) == order_true_chnnls
+
+
+####################################
+# ImagePrep tests
+####################################
+
+# need to create a dictionary for ImagePrep
+# this can contain only a single image in three channels
+TEST_IMG_DIR = os.path.join(TEST_DIR, "test_images")
+IMG_NAMES = [i for i in os.listdir(TEST_IMG_DIR) if i.startswith("val screen")]
+REAL_IMG_PATHS = [os.path.join(TEST_DIR, "test_images", i) for i in IMG_NAMES]
+# skip using ImageDict to create dict, make it manually
+img_dict = {"foo" : REAL_IMG_PATHS}
+
+def test_ImagePrep():
+    img_prep = image_prep.ImagePrep(img_dict)
+    assert isinstance(img_prep.img_dict, dict)
+    assert list(img_prep.img_dict.keys()) == ["foo"]
+    assert list(img_prep.img_dict.values())[0] == REAL_IMG_PATHS
+
+
+def test_ImagePrep_convert_to_rgb():
+    img_prep = image_prep.ImagePrep(img_dict)
+    out = img_prep.convert_to_rgb(REAL_IMG_PATHS)
+    assert isinstance(out, np.ndarray)
+    assert out.ndim == 3
+
+# TODO sort testing with creating and tearing down directories with pytest
+# def test_ImagePrep_create_directories():
+#     assert 2 + 2 == 5
+#
+#
+# def test_ImagePrep_prepare_images():
+#     assert 2 + 2 == 5
