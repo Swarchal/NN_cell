@@ -196,13 +196,13 @@ class ImageDict(object):
         # parse wells from metadata
         wells = [parse.img_well(path) for path in img_list]
         combined = zip(img_list, wells)
-        if isinstance(list, well):
+        if isinstance(well, list):
             wanted_images = []
             for i in well:
                 for path, parsed_well in combined:
                     if i == parsed_well:
                         wanted_images.append(path)
-        elif isinstance(str, well):
+        elif isinstance(well, str):
             wanted_images = []
             for path, parsed_well in combined:
                 if well == parsed_well:

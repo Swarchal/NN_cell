@@ -103,6 +103,25 @@ def test_ImageDict_sort_channels():
     assert sorted(order_true_chnnls) == order_true_chnnls
 
 
+def test_ImageDict_get_wells_list():
+    ImgDict = image_prep.ImageDict()
+    wells_to_get = ["B02", "C02"]
+    wanted = ImgDict.get_wells(IMG_URLS, wells_to_get)
+    # parse well info from image urls
+    wanted_wells = [parse.img_well(url) for url in wanted]
+    for well in wanted_wells:
+        assert well in wells_to_get
+
+def test_ImageDict_get_wells_str():
+    ImgDict = image_prep.ImageDict()
+    well_to_get = "B02"
+    wanted = ImgDict.get_wells(IMG_URLS, well_to_get)
+    # parse well info from image urls
+    wanted_wells = [parse.img_well(url) for url in wanted]
+    for well in wanted_wells:
+        assert well in well_to_get
+
+
 ####################################
 # ImagePrep tests
 ####################################
