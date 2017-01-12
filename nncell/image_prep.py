@@ -12,6 +12,7 @@ from parserix import parse
 import skimage
 from skimage import io
 from nncell import utils
+from nncell import chop
 
 class ImagePrep(object):
     """
@@ -88,7 +89,7 @@ class ImagePrep(object):
         """
         create directory structure for prepared images
 
-        Arguments:
+        Parameters:
         -----------
         base_dir : string
             Path to directory in which to hold training and test datasets
@@ -107,6 +108,36 @@ class ImagePrep(object):
                     rgb_img = self.convert_to_rgb(img)
                     self.write_img_to_disk(img=rgb_img, name="img_{}".format(i),
                                            path=dir_path)
+
+
+    def create_directories_chop(self, base_dir, **kwargs):
+        """
+        create directory structure for prepared images, and chop each image
+        into an image per cell.
+
+        Parameters:
+        -----------
+        base_dir : string
+            Path to directory in which to hold training and test datasets.
+            A directory will be created if it does not already exist
+        **kwargs: additional arguments to chop functions
+        """
+        utils.make_dir(base_dir)
+        for group in self.img_dict.keys():
+            for key, img_list in self.img_dict[group].items():
+                # create directory item/key from key
+                dir_path = os.path.join(os.path.abspath(base_dir), group, key)
+                utils.make_dir(dir_path)
+                # create and save images in dir_path
+                for i, img in enumerate(img_list, 1):
+                    rgb_img = self.convert_to_rgb(img)
+                    # chop image into sub-img per cell
+                    sub_img_array = chop.chop_nuclei(rgb_img, **kwargs)
+                    for j, sub_img in enumerate(sub_img_array, 1):
+                        img_name = "img_{}_{}.png".format(i, j)
+                        full_path = os.path.join(os.path.abspath(dir_path), img_name)
+                        io.imsave(fname=full_path, arr=sub_img)
+
 
 
 class ImageDict(object):
