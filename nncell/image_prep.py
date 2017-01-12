@@ -111,7 +111,7 @@ class ImageDict(object):
     Class to make an image dictionary for ImagePrep()
 
     No idea on how to handle this yet
-        - Iteractively add image lists that are appended to a dictionary?
+        - Interactively add image lists that are appended to a dictionary?
         - Construct a directory system and give the directory path to ImageDict?
         - Give plate, wells etc for various classes?
     """
@@ -135,7 +135,7 @@ class ImageDict(object):
         """
         grouped_list = []
         urls = [parse.img_filename(i) for i in url_list]
-        tmp_df = pd.DataFrame(url_list, columns=["img_url"])
+        tmp_df = pd.DataFrame(list(url_list), columns=["img_url"])
         tmp_df["plate_name"] = [parse.plate_name(i) for i in url_list]
         tmp_df["plate_num"] = [parse.plate_num(i) for i in url_list]
         # get_well and get_site use the image URL rather than the full path
@@ -272,8 +272,6 @@ class ImageDict(object):
 
     def group_image_channels(self, order=True):
         """group each image list into RGB channels"""
-        if self.grouped is True:
-            raise Warning("images already grouped")
         if self.train_test_sets is True:
             raise AttributeError("already formed training and test sets")
         for key, img_list in self.parent_dict.items():
