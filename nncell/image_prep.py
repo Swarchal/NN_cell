@@ -63,6 +63,7 @@ class ImagePrep(object):
         extension : (string, default=".png")
             file extension for image, can either be saved as .png or .jpg
         """
+        assert isinstance(img, np.ndarray)
         full_path = os.path.join(path, name + extension)
         io.imsave(fname=full_path, arr=img)
 
@@ -102,7 +103,9 @@ class ImagePrep(object):
                 utils.make_dir(dir_path)
                 # create and save images in dir_path
                 for i, img in enumerate(img_list, 1):
-                    self.write_img_to_disk(img=img, name="img_{}".format(i),
+                    # need to load images and merge
+                    rgb_img = self.convert_to_rgb(img)
+                    self.write_img_to_disk(img=rgb_img, name="img_{}".format(i),
                                            path=dir_path)
 
 
