@@ -30,7 +30,7 @@ def is_outside_img(x, y, img_size, size):
         True if box exceeds image boundary
         False if box lies within image boundary
     """
-    dist = size / 2.0
+    dist = int(size / 2.0)
     if (x + dist > img_size[0]) or (x - dist < 0):
         return True
     if (y + dist > img_size[1]) or (y - dist < 0):
@@ -103,7 +103,7 @@ def crop_to_box(x, y, img, size, edge="keep"):
     for dim in img.shape[:2]:
         if dim < size:
             raise ValueError("image is too small for specified box size")
-    dist = size / 2
+    dist = int(size / 2)
     # determine if the box will be within the image
     if is_outside_img(x, y, img.shape, size):
         if edge == "keep":
@@ -113,9 +113,9 @@ def crop_to_box(x, y, img, size, edge="keep"):
             # don't use this x,y co-ordinate
             return None
     if img.ndim == 2:
-        return img[x - dist: x + dist, y - dist: y + dist]
+        return img[int(x - dist): int(x + dist), int(y - dist): int(y + dist)]
     elif img.ndim == 3:
-        return img[x - dist: x + dist, y - dist: y + dist, :]
+        return img[int(x - dist): int(x + dist), int(y - dist): int(y + dist), :]
     else:
         raise ValueError("wrong number of dimensions in img")
 
