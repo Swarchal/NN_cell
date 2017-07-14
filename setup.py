@@ -12,5 +12,6 @@ setup(name="nncell",
       install_requires=["pandas>=0.16",
                         "numpy>=1.0",
                         "scikit-image>=0.12",
-                        "parserix>=0.1"],
+                        "parserix>=0.1",
+                        "joblib>=0.10.0"],
       zip_safe=False)
