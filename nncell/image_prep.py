@@ -175,10 +175,7 @@ class ImagePrep(Prepper):
                             full_path = os.path.join(os.path.abspath(dir_path), img_name)
                             io.imsave(fname=full_path, arr=sub_img)
                     except ValueError:
-                        raise Warning("something went wrong, skipping image")
-
-
-
+                        pass
 
 
 
@@ -288,7 +285,7 @@ class ArrayPrep(Prepper):
                             full_path = os.path.join(os.path.abspath(dir_path), img_name)
                             np.save(file=full_path, arr=sub_img)
                     except ValueError:
-                        raise Warning("something went wrong, skipping image")
+                        pass
 
 
 
@@ -548,6 +545,8 @@ class ImageDict(object):
                 self.parent_dict[class_name] = url_list
             else:
                 raise ValueError("append expects a Boolean")
+        else:
+            self.parent_dict[class_name] = url_list
 
 
     def make_dict(self):
