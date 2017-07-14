@@ -6,10 +6,13 @@ Also need to split into a test and a training directory
 
 import os
 import random
+import uuid
 import numpy as np
 import pandas as pd
 from parserix import parse
 import skimage
+from joblib import Parallel, delayed
+import multiprocessing
 from skimage import io
 from nncell import utils
 from nncell import chop
@@ -176,6 +179,31 @@ class ImagePrep(Prepper):
                             io.imsave(fname=full_path, arr=sub_img)
                     except ValueError:
                         pass
+
+
+    def create_directories_chop_par(self, base_dir, n_jobs=-1):
+        """
+        create directory structure for prepared images, and chop each image
+        into an image per cell.
+
+        Parameters:
+        -----------
+        base_dir : string
+            Path to directory in which to hold training and test datasets.
+            A directory will be created if it does not already exist
+        **kwargs: additional arguments to chop functions
+        """
+
+        if n_jobs < 1:
+            n_jobs = multiprocessing.cpu_count()
+
+        utils.make_dir(base_dir)
+        for group in self.img_dict.keys():
+            for key, img_list in self.img_dict[group].items():
+                # create directory item/key from key
+                dir_path = os.path.join(os.path.abspath(base_dir), group, key)
+                utils.make_dir(dir_path)
+                Parallel(n_jobs=n_jobs)(delayed(chopper)(img, dir_path) for img in img_list)
 
 
 
@@ -552,3 +580,26 @@ class ImageDict(object):
     def make_dict(self):
         """return image dictionary"""
         return self.train_test_dict
+
+
+
+
+def _convert_to_rgb(img_channels):
+    """read in three channels and merge to an 8-bit RGB array"""
+    image_collection = io.imread_collection(img_channels)
+    img_ubyte = skimage.img_as_ubyte(image_collection)
+    return np.dstack(img_ubyte)
+
+
+def chopper(img, dir_path):
+    """wrapper round chop.chop_nuclei for joblib parallelism"""
+    try:
+        img = _convert_to_rgb(img)
+        sub_img_array = chop.chop_nuclei(img)
+        for sub_img in sub_img_array:
+            img_name = "img_{}.png".format(uuid.uuid4().hex)
+            full_path = os.path.join(os.path.abspath(dir_path), img_name)
+            io.imsave(fname=full_path, arr=sub_img)
+    except ValueError:
+        # numpy stack error for empty channels, skip image
+        pass

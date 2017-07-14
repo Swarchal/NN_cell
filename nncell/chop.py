@@ -134,7 +134,7 @@ def chop_nuclei(img, size=100, edge="keep", threshold=0.1, **kwargs):
     size : integer
         size of image, must be a positive even integer (in pixels)
     edge : string
-        what to do with nuclei on the ed`ge of the parent image
+        what to do with nuclei on the edge of the parent image
         options:
             keep   : nuclei will be kept though they may not be centered within
                      the individual image
