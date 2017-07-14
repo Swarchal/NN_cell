@@ -91,7 +91,7 @@ class ImagePrep(Prepper):
     """
 
     def __init__(self, img_dict):
-        super(Prepper, self).__init__(img_dict)
+        super().__init__(img_dict)
 
 
     @staticmethod
@@ -201,7 +201,7 @@ class ArrayPrep(Prepper):
     """
 
     def __init__(self, img_dict):
-        super(Prepper, self).__init__(img_dict)
+        super().__init__(img_dict)
 
 
     @staticmethod
