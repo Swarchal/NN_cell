@@ -14,13 +14,14 @@ from skimage import io
 from nncell import utils
 from nncell import chop
 
-class ImagePrep(object):
-    """
-    Prepare images for Keras.preprocessing.image.ImageDataGenerator.
-    Creating directories split into test, training, and within those
-    images are in directories named after their class.
-    Images stored as three channel (RGB) .png files
 
+
+
+class Prepper(object):
+    """
+    Abstract class for ImagePrep and ArrayPrep to create directories of images
+    or arrays for keras DataGenerators
+    
     Input:
     -------
     input dictionary from ImageDict:
@@ -48,6 +49,51 @@ class ImagePrep(object):
         return np.dstack(img_ubyte)
 
 
+    def _check_dict(self):
+        """check validity of input dict"""
+        # make sure it has train and test sub-dictionaries
+        if len(self.img_dict.keys()) != 2:
+            raise ValueError("input dict has too few keys")
+        # make sure it has train and test sub-dictionaries
+        if ("train" or "test") not in self.img_dict.keys():
+            raise ValueError("missing train or test keys in input dictionary")
+        # TODO more checks, check we have lists of strings in sub-directories
+        # check we have the same classes in train and test directories
+        train_classes = self.img_dict["train"].keys()
+        test_classes = self.img_dict["test"].keys()
+        if sorted(train_classes) != sorted(test_classes):
+            raise ValueError("train and test sets contain differing classes")
+
+
+
+
+
+
+
+
+class ImagePrep(Prepper):
+    """
+    Prepare images for Keras.preprocessing.image.ImageDataGenerator.
+    Creating directories split into test, training, and within those
+    images are in directories named after their class.
+    Images stored as three channel (RGB) .png files
+
+    Input:
+    -------
+    input dictionary from ImageDict:
+
+        train:
+            class1 : [image_list]
+            class2 : [image_list]
+        test:
+            class1 : [image_list]
+            class2 : [image_list]
+    """
+
+    def __init__(self, img_dict):
+        super().__init__(img_dict)
+
+
     @staticmethod
     def write_img_to_disk(img, name, path, extension=".png"):
         """
@@ -67,22 +113,6 @@ class ImagePrep(object):
         assert isinstance(img, np.ndarray)
         full_path = os.path.join(path, name + extension)
         io.imsave(fname=full_path, arr=img)
-
-
-    def _check_dict(self):
-        """check validity of input dict"""
-        # make sure it has train and test sub-dictionaries
-        if len(self.img_dict.keys()) != 2:
-            raise ValueError("input dict has too few keys")
-        # make sure it has train and test sub-dictionaries
-        if ("train" or "test") not in self.img_dict.keys():
-            raise ValueError("missing train or test keys in input dictionary")
-        # TODO more checks, check we have lists of strings in sub-directories
-        # check we have the same classes in train and test directories
-        train_classes = self.img_dict["train"].keys()
-        test_classes = self.img_dict["test"].keys()
-        if sorted(train_classes) != sorted(test_classes):
-            raise ValueError("train and test sets contain differing classes")
 
 
     def create_directories(self, base_dir):
@@ -132,11 +162,139 @@ class ImagePrep(object):
                 for i, img in enumerate(img_list, 1):
                     rgb_img = self.convert_to_rgb(img)
                     # chop image into sub-img per cell
-                    sub_img_array = chop.chop_nuclei(rgb_img, **kwargs)
-                    for j, sub_img in enumerate(sub_img_array, 1):
-                        img_name = "img_{}_{}.png".format(i, j)
-                        full_path = os.path.join(os.path.abspath(dir_path), img_name)
-                        io.imsave(fname=full_path, arr=sub_img)
+                    # sometimes there is an error where we don't have all the
+                    # channel to stack into an array, not sure what is causing
+                    # this though we can skip any errors and carry on processing
+                    # the images rather than crash the entire session
+                    #
+                    # probably a much better way to handle this, but screw it
+                    try:
+                        sub_img_array = chop.chop_nuclei(rgb_img, **kwargs)
+                        for j, sub_img in enumerate(sub_img_array, 1):
+                            img_name = "img_{}_{}.png".format(i, j)
+                            full_path = os.path.join(os.path.abspath(dir_path), img_name)
+                            io.imsave(fname=full_path, arr=sub_img)
+                    except ValueError:
+                        raise Warning("something went wrong, skipping image")
+
+
+
+
+
+
+
+
+class ArrayPrep(Prepper):
+    """
+    Prepare numpy arrays for Keras.preprocessing.image.ImageDataGenerator.
+    Creating directories split into test, training, and within those
+    Arrays are in directories named after their class.
+    Arrays are stored as .npy files
+
+    Input:
+    -------
+    input dictionary from ImageDict:
+    e.g
+        train:
+            class1 : [image_list]
+            class2 : [image_list]
+        test:
+            class1 : [image_list]
+            class2 : [image_list]
+    """
+
+    def __init__(self, img_dict):
+        super().__init__(img_dict)
+
+
+    @staticmethod
+    def write_array_to_disk(img, name, path, extension=".npy"):
+        """
+        write array to disk
+
+        Arguments:
+        ----------
+        img : numpy array
+            numpy array  created by ImageDict.convert_to_rgb()
+        name : (string)
+            what the image file should be called
+        path : (string)
+            path to save location
+        extension : (string, default=".npy")
+            file extension for array
+        """
+        assert isinstance(img, np.ndarray)
+        full_path = os.path.join(path, name + extension)
+        np.save(file=full_path, arr=img)
+
+
+    def create_directories(self, base_dir):
+        """
+        create directory structure for prepared images
+
+        Parameters:
+        -----------
+        base_dir : string
+            Path to directory in which to hold training and test datasets
+            A directory will be created if it does not already exist
+        """
+        utils.make_dir(base_dir)
+        # create training and test directories
+        for group in self.img_dict.keys():
+            for key, img_list in self.img_dict[group].items():
+                # create directory item/key from key
+                dir_path = os.path.join(os.path.abspath(base_dir), group, key)
+                utils.make_dir(dir_path)
+                # create and save images in dir_path
+                for i, img in enumerate(img_list, 1):
+                    # need to load images and merge
+                    rgb_img = self.convert_to_rgb(img)
+                    self.write_array_to_disk(img=rgb_img, name="img_{}".format(i),
+                                             path=dir_path)
+
+
+    def create_directories_chop(self, base_dir, **kwargs):
+        """
+        create directory structure for prepared images, and chop each image
+        into an image per cell.
+
+        Parameters:
+        -----------
+        base_dir : string
+            Path to directory in which to hold training and test datasets.
+            A directory will be created if it does not already exist
+        **kwargs: additional arguments to chop functions
+        """
+        utils.make_dir(base_dir)
+        for group in self.img_dict.keys():
+            for key, img_list in self.img_dict[group].items():
+                # create directory item/key from key
+                dir_path = os.path.join(os.path.abspath(base_dir), group, key)
+                utils.make_dir(dir_path)
+                # create and save images in dir_path
+                for i, img in enumerate(img_list, 1):
+                    rgb_img = self.convert_to_rgb(img)
+                    # chop image into sub-img per cell
+                    # sometimes there is an error where we don't have all the
+                    # channel to stack into an array, not sure what is causing
+                    # this though we can skip any errors and carry on processing
+                    # the images rather than crash the entire session
+                    #
+                    # probably a much better way to handle this, but screw it
+                    try:
+                        sub_img_array = chop.chop_nuclei(rgb_img, **kwargs)
+                        for j, sub_img in enumerate(sub_img_array, 1):
+                            img_name = "img_{}_{}.npy".format(i, j)
+                            full_path = os.path.join(os.path.abspath(dir_path), img_name)
+                            np.save(file=full_path, arr=sub_img)
+                    except ValueError:
+                        raise Warning("something went wrong, skipping image")
+
+
+
+
+
+
 
 
 
@@ -198,7 +356,7 @@ class ImageDict(object):
         """
         randomly split list object into training and test set
 
-        Arguments:
+        Parameters:
         -----------
         list_like : list-like
             list to split into training and test sets
@@ -215,7 +373,7 @@ class ImageDict(object):
 
 
     @staticmethod
-    def get_wells(img_list, well):
+    def get_wells(img_list, wells_to_get, plate=None):
         """
         given a list of image paths, this will return the images matching
         the well or wells given in well
@@ -226,22 +384,48 @@ class ImageDict(object):
             list of image URLs
         well : string or list of strings
             which well(s) to select
+        plate: string or list of strings (default = None)
+            get wells per specified plate(s)
         """
         # parse wells from metadata
-        wells = [parse.img_well(path) for path in img_list]
-        combined = zip(img_list, wells)
-        if isinstance(well, list):
-            wanted_images = []
-            for i in well:
+        if plate is None:
+            # ignore plate labels, get all matching wells
+            wells = [parse.img_well(path) for path in img_list]
+            combined = zip(img_list, wells)
+            if isinstance(wells_to_get, list):
+                wanted_images = []
+                for i in wells_to_get:
+                    for path, parsed_well in combined:
+                        if i == parsed_well:
+                            wanted_images.append(path)
+            elif isinstance(wells_to_get, str):
+                wanted_images = []
                 for path, parsed_well in combined:
-                    if i == parsed_well:
+                    if wells_to_get == parsed_well:
                         wanted_images.append(path)
-        elif isinstance(well, str):
+            return wanted_images
+        else:
+            # get wells per specified plate(s)
             wanted_images = []
-            for path, parsed_well in combined:
-                if well == parsed_well:
-                    wanted_images.append(path)
-        return wanted_images
+            if isinstance(wells_to_get, str):
+                wells_to_get = [wells_to_get]
+            if isinstance(plate, str):
+                plate = [plate]
+            urls = [parse.img_filename(i) for i in img_list]
+            tmp_df = pd.DataFrame(list(img_list), columns=["img_url"])
+            tmp_df["plate_name"] = [parse.plate_name(i) for i in img_list]
+            tmp_df["well"] = [parse.img_well(i) for i in urls]
+            tmp_df["site"] = [parse.img_site(i) for i in urls]
+            grouping_cols = ["plate_name"]
+            grouped_df = tmp_df.groupby(grouping_cols)
+            for name, group in grouped_df:
+                if name in plate:
+                    # get only wells that match well
+                    tmp_urls = group[group.well.isin(wells_to_get)].img_url.tolist()
+                    wanted_images.extend(tmp_urls)
+            return wanted_images
+                    
+
 
 
     @staticmethod
@@ -333,7 +517,7 @@ class ImageDict(object):
         self.train_test_sets = True
 
 
-    def add_class(self, class_name, url_list):
+    def add_class(self, class_name, url_list, extend=True):
         """
         add a new class of images to the url_list
 
@@ -343,6 +527,9 @@ class ImageDict(object):
             name of the class to be stored in the dictionary
         url_list : list of strings
             image paths that belong to `class_name`
+        extend : Boolean
+            If True will extend the existing class, if False it will
+            overwrite the data in that class
         """
         if self.grouped is True:
             raise Warning("channels already grouped, this will need to be " +
@@ -350,7 +537,17 @@ class ImageDict(object):
         if self.train_test_sets is True:
             msg = "cannot add new class once training and test sets have been sampled"
             raise AttributeError(msg)
-        self.parent_dict[class_name] = url_list
+        # if we already have that class
+        if class_name in self.parent_dict.keys():
+            if extend is True:
+                self.parent_dict[class_name].extend(url_list)
+            elif extend is False:
+                msg = "'{}' already exists and extend is False, overwriting class".format(
+                    class_name)
+                print(msg)
+                self.parent_dict[class_name] = url_list
+            else:
+                raise ValueError("append expects a Boolean")
 
 
     def make_dict(self):
