@@ -165,7 +165,7 @@ def chop_nuclei(img, size=100, edge="keep", threshold=0.1, **kwargs):
     return np.stack(cropped_remove_na)
 
 
-def save_chopped(arr, directory, prefix="img", ext=".png"):
+def save_chopped(arr, directory, prefix="img", ext=".png", save_as="img"):
     """
     Save chopped array from chop_nuclei() to a directory. Each image will be
     saved individually and consecutively numbered.
@@ -179,16 +179,23 @@ def save_chopped(arr, directory, prefix="img", ext=".png"):
     prefix : string (default : "img")
         image prefix
     ext : string (default : ".png")
-        file extension. options are .png and .jpg
+        file extension. options are .png and .jpg if saving as an image.
+        Otherwise recommended extension for numpy arrays is .npy
     """
     assert isinstance(arr, np.ndarray)
     _check_ext_args(ext)
     utils.make_dir(directory)
     # loop through images in array and save with consecutive numbers
-    for i, img in enumerate(arr, 1):
-        img_name = "{}_{}{}".format(prefix, i, ext)
-        full_path = os.path.join(os.path.abspath(directory), img_name)
-        io.imsave(fname=full_path, arr=img)
+    if save_as == "img":
+        for i, img in enumerate(arr, 1):
+            img_name = "{}_{}{}".format(prefix, i, ext)
+            full_path = os.path.join(os.path.abspath(directory), img_name)
+            io.imsave(fname=full_path, arr=img)
+    else:
+        for i, img in enumerate(arr, 1):
+            arr_name = "arr_{}.npy".format(i)
+            full_path = os.path.join(os.path.abspath(directory), arr_name)
+            np.save(full_path, img)
 
 
 def _check_size(size):
