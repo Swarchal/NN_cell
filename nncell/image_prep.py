@@ -181,7 +181,7 @@ class ImagePrep(Prepper):
                         pass
 
 
-    def create_directories_chop_par(self, base_dir, n_jobs=-1):
+    def create_directories_chop_par(self, base_dir, n_jobs=-1, size=200):
         """
         create directory structure for prepared images, and chop each image
         into an image per cell.
@@ -203,7 +203,7 @@ class ImagePrep(Prepper):
                 # create directory item/key from key
                 dir_path = os.path.join(os.path.abspath(base_dir), group, key)
                 utils.make_dir(dir_path)
-                Parallel(n_jobs=n_jobs)(delayed(chopper)(img, dir_path) for img in img_list)
+                Parallel(n_jobs=n_jobs)(delayed(chopper)(img, dir_path, size) for img in img_list)
 
 
 
@@ -591,11 +591,11 @@ def _convert_to_rgb(img_channels):
     return np.dstack(img_ubyte)
 
 
-def chopper(img, dir_path):
+def chopper(img, dir_path, size):
     """wrapper round chop.chop_nuclei for joblib parallelism"""
     try:
         img = _convert_to_rgb(img)
-        sub_img_array = chop.chop_nuclei(img)
+        sub_img_array = chop.chop_nuclei(img, size)
         for sub_img in sub_img_array:
             img_name = "img_{}.png".format(uuid.uuid4().hex)
             full_path = os.path.join(os.path.abspath(dir_path), img_name)
