@@ -25,5 +25,5 @@ def make_dir(directory):
 def softmax(results):
     results = np.asarray(results)
     exp_r = np.exp(results)
-    return results / exp_r.sum()
+    return exp_r / exp_r.sum()
 
