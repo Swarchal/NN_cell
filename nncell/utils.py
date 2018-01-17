@@ -1,4 +1,5 @@
 import os
+import numpy as np
 
 def is_full_path(path):
     """determines if URL is a full path or just a file name"""
