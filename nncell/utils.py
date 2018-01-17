@@ -19,3 +19,10 @@ def make_dir(directory):
         else:
             err_msg = "failed to create directory {}".format(directory)
             raise RuntimeError(err_msg)
+
+
+def softmax(results):
+    results = np.asarray(results)
+    exp_r = np.exp(results)
+    return results / exp_r.sum()
+
