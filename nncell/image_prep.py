@@ -143,10 +143,12 @@ class ImagePrep(Prepper):
                                            path=dir_path)
 
 
-    def create_directories_chop(self, base_dir, **kwargs):
+    def create_directories_chop(self, base_dir, prefix="", as_array=False,
+                                **kwargs):
         """
         create directory structure for prepared images, and chop each image
         into an image per cell.
+        Images are saved as RGB in .png format.
 
         Parameters:
         -----------
@@ -174,12 +176,17 @@ class ImagePrep(Prepper):
                     try:
                         sub_img_array = chop.chop_nuclei(rgb_img, **kwargs)
                         for j, sub_img in enumerate(sub_img_array, 1):
-                            img_name = "img_{}_{}.png".format(i, j)
-                            full_path = os.path.join(os.path.abspath(dir_path), img_name)
-                            io.imsave(fname=full_path, arr=sub_img)
+                            if as_array: # save as numpy array
+                                img_name = "{}_img_{}_{}.npy".format(prefix, i, j)
+                                full_path = os.path.join(os.path.abspath(dir_path), img_name)
+                                np.save(file=full_path, arr=sub_img,
+                                        allow_pickle=False)
+                            else: # save as .png (has to be RGB)
+                                img_name = "{}_img_{}_{}.png".format(prefix, i, j)
+                                full_path = os.path.join(os.path.abspath(dir_path), img_name)
+                                io.imsave(fname=full_path, arr=sub_img)
                     except ValueError:
                         pass
-
 
     def create_directories_chop_par(self, base_dir, n_jobs=-1, size=200):
         """
