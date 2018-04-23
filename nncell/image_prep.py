@@ -148,13 +148,17 @@ class ImagePrep(Prepper):
         """
         create directory structure for prepared images, and chop each image
         into an image per cell.
-        Images are saved as RGB in .png format.
 
         Parameters:
         -----------
         base_dir : string
             Path to directory in which to hold training and test datasets.
             A directory will be created if it does not already exist
+        prefix: string
+            prefix for image file names
+        as_array: Boolean
+            if True will save as a numpy array. If False, then images are saved
+            as RGB .png files.
         **kwargs: additional arguments to chop functions
         """
         utils.make_dir(base_dir)
@@ -166,6 +170,10 @@ class ImagePrep(Prepper):
                 # create and save images in dir_path
                 for i, img in enumerate(img_list, 1):
                     rgb_img = self.convert_to_rgb(img)
+                    # convert_to_rgb is a bit of a misnomer, actually just stacks
+                    # an image collection to a numpy array, can work with more
+                    # than three channels
+                    #
                     # chop image into sub-img per cell
                     # sometimes there is an error where we don't have all the
                     # channel to stack into an array, not sure what is causing
